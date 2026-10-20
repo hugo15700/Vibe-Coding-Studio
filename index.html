@@ -3,941 +3,369 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#101114">
+  <meta name="theme-color" content="#111114">
+  <meta name="description" content="A calm, simple text editor for your next idea.">
   <title>Vibe Coding Studio</title>
   <style>
     :root {
       color-scheme: dark;
-      --page: #101114;
-      --panel: #17181d;
-      --panel-raised: #1d1f25;
-      --panel-soft: #22242b;
-      --line: #2b2d35;
-      --muted: #8d909d;
-      --text: #f1f0f6;
-      --purple: #a78bfa;
-      --purple-strong: #8b5cf6;
-      --green: #8ce4b3;
-      --orange: #f5b971;
-      --mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --background: #111114;
+      --surface: #17171c;
+      --surface-raised: #1d1d23;
+      --border: #2b2a32;
+      --text: #f2eff7;
+      --muted: #92909d;
+      --purple: #b49aff;
+      --accent: #8b65e8;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     }
 
     * { box-sizing: border-box; }
-    body { margin: 0; min-width: 320px; height: 100vh; overflow: hidden; background: var(--page); color: var(--text); }
+    body { min-width: 320px; min-height: 100vh; margin: 0; background: var(--background); color: var(--text); }
     button, textarea { font: inherit; }
-    button { color: inherit; }
-    button:focus-visible, textarea:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
-    .app { height: 100vh; display: flex; flex-direction: column; }
-    .topbar { height: 58px; flex: 0 0 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--line); background: #141519; }
-    .brand, .top-actions, .breadcrumbs, .toolbar, .status-left, .status-right { display: flex; align-items: center; }
-    .brand { gap: 11px; min-width: 230px; }
-    .brand-mark { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; color: #fff; background: linear-gradient(145deg, #c4a9ff, #8055e8); box-shadow: 0 4px 18px #8b5cf633; }
-    .brand-mark svg { width: 17px; }
-    .brand-name { font-size: 13px; font-weight: 720; letter-spacing: -.2px; }
-    .brand-subtitle { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-weight: 450; }
-    .breadcrumbs { gap: 9px; color: var(--muted); font-size: 12px; }
-    .breadcrumbs strong { color: #dedde5; font-weight: 550; }
-    .crumb-slash { color: #555762; }
-    .top-actions { gap: 9px; min-width: 230px; justify-content: flex-end; }
-    .icon-button, .quiet-button, .run-button, .send-button, .welcome-close, .close-preview {
-      display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line); border-radius: 7px; background: transparent; cursor: pointer; transition: background .15s, border-color .15s, transform .15s;
+    button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; }
+
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 0 clamp(20px, 5vw, 72px);
+      border-bottom: 1px solid #ffffff0d;
     }
-    .icon-button { width: 32px; height: 32px; color: #b8bac5; }
-    .icon-button:hover, .quiet-button:hover { background: var(--panel-soft); border-color: #41434e; }
-    .icon-button svg, .run-button svg, .quiet-button svg, .send-button svg, .toolbar svg { width: 15px; height: 15px; }
-    .quiet-button { height: 32px; padding: 0 10px; color: #c7c7d0; font-size: 11px; }
-    .run-button { height: 32px; padding: 0 12px; color: #fff; border-color: #966ff0; background: #8055e8; font-size: 11px; font-weight: 650; }
-    .run-button:hover { background: #9169f1; transform: translateY(-1px); }
-    .workspace { display: flex; flex: 1; min-height: 0; }
-    .activity-rail { width: 49px; flex: 0 0 49px; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 13px 0; border-right: 1px solid var(--line); background: #141519; }
-    .rail-button { position: relative; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #777a87; cursor: pointer; }
-    .rail-button svg { width: 18px; height: 18px; }
-    .rail-button:hover, .rail-button.active { color: #eee9ff; background: #25222f; }
-    .rail-button.active::before { position: absolute; left: -7px; width: 2px; height: 20px; border-radius: 2px; background: var(--purple); content: ""; }
-    .rail-spacer { flex: 1; }
-    .explorer { width: 218px; flex: 0 0 218px; padding: 18px 12px; border-right: 1px solid var(--line); background: #16171b; }
-    .section-heading { display: flex; align-items: center; justify-content: space-between; margin: 0 7px 18px; color: #b9bac4; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-    .section-heading button { width: 23px; height: 23px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: #858794; cursor: pointer; font-size: 17px; line-height: 1; }
-    .section-heading button:hover { background: var(--panel-soft); color: var(--text); }
-    .project-label { display: flex; align-items: center; gap: 7px; margin: 0 6px 10px; color: #e5e3ed; font-size: 11px; font-weight: 650; }
-    .project-label svg { width: 14px; color: var(--purple); }
-    .tree { display: grid; gap: 3px; }
-    .file-button { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 29px; padding: 0 8px 0 23px; border: 0; border-radius: 5px; background: transparent; color: #a6a8b3; text-align: left; font-size: 11px; cursor: pointer; }
-    .file-button:hover { background: #22232a; color: #f1f0f6; }
-    .file-button.selected { background: #292433; color: #e9deff; }
-    .file-button svg { width: 14px; height: 14px; color: #9ca0ad; }
-    .file-button .html-icon { color: #ef9e6d; }
-    .file-button .css-icon { color: #8eacf8; }
-    .file-button .js-icon { color: #e7ce78; }
-    .file-button .json-icon { color: #95d5a8; }
-    .folder-row { display: flex; align-items: center; gap: 6px; padding: 8px 6px 5px; color: #8f919e; font-size: 10px; }
-    .folder-row svg { width: 13px; height: 13px; }
-    .editor-area { display: flex; flex: 1; min-width: 0; }
-    .editor-column { display: flex; flex: 1; flex-direction: column; min-width: 300px; }
-    .tabs { height: 39px; flex: 0 0 39px; display: flex; align-items: stretch; border-bottom: 1px solid var(--line); background: #16171b; }
-    .tab { display: flex; align-items: center; gap: 7px; padding: 0 13px; border-right: 1px solid var(--line); color: #a8a9b3; font-size: 11px; }
-    .tab.active { position: relative; background: #1b1c21; color: #e9e6f2; }
-    .tab.active::after { position: absolute; top: 0; right: 0; left: 0; height: 2px; background: var(--purple); content: ""; }
-    .tab svg { width: 14px; height: 14px; color: #ef9e6d; }
-    .tab-close { margin-left: 9px; color: #858692; }
-    .toolbar { height: 38px; flex: 0 0 38px; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid #25262d; color: #8e909b; font-size: 10px; }
-    .toolbar-group { display: flex; align-items: center; gap: 13px; }
-    .toolbar button { display: inline-flex; align-items: center; gap: 5px; padding: 3px; border: 0; background: transparent; color: #9294a0; cursor: pointer; font-size: 10px; }
-    .toolbar button:hover { color: #e6e2f0; }
-    .editor { display: flex; flex: 1; min-height: 170px; overflow: auto; background: #191a1f; font-family: var(--mono); font-size: 12px; line-height: 1.85; }
-    .line-numbers { width: 49px; flex: 0 0 49px; padding: 16px 12px 20px 0; color: #555762; text-align: right; user-select: none; white-space: pre; }
-    .code-input { flex: 1; min-width: 0; min-height: 100%; padding: 16px 18px 20px 4px; resize: none; border: 0; outline: 0; background: transparent; color: #d7d5df; font: inherit; line-height: inherit; tab-size: 2; white-space: pre; overflow: auto; }
-    .code-input:focus-visible { outline: none; }
-    .preview-panel { height: 35%; min-height: 150px; display: flex; flex-direction: column; border-top: 1px solid var(--line); background: #f8f7fa; }
-    .preview-panel.hidden { display: none; }
-    .preview-toolbar { height: 34px; flex: 0 0 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #e6e3eb; background: #f0eef4; color: #50515b; font-size: 10px; }
-    .preview-label { display: flex; align-items: center; gap: 7px; font-weight: 600; }
-    .preview-label .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #46c883; }
-    .preview-address { color: #898a94; font-family: var(--mono); }
-    .close-preview { width: 23px; height: 23px; border-color: transparent; color: #656671; }
-    .preview-frame { width: 100%; flex: 1; border: 0; background: #fff; }
-    .assistant { width: 305px; flex: 0 0 305px; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: #16171b; }
-    .assistant-header { height: 53px; flex: 0 0 53px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid var(--line); }
-    .assistant-title { display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 650; }
-    .assistant-icon { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid #49386d; border-radius: 7px; background: #282137; color: #c5a9ff; }
-    .assistant-icon svg { width: 14px; height: 14px; }
-    .model-pill { padding: 4px 7px; border: 1px solid #34353e; border-radius: 5px; color: #9c9eaa; font-size: 9px; }
-    .assistant-tabs { height: 37px; flex: 0 0 37px; display: flex; gap: 17px; padding: 0 15px; border-bottom: 1px solid var(--line); }
-    .assistant-tab { position: relative; padding: 0 2px; border: 0; background: transparent; color: #858792; cursor: pointer; font-size: 10px; }
-    .assistant-tab.active { color: #e9e6f2; }
-    .assistant-tab.active::after { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: var(--purple); content: ""; }
-    .assistant-tab:disabled { color: #555762; cursor: not-allowed; }
-    .assistant-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-    .assistant-view.hidden { display: none; }
-    .setup-view { gap: 14px; overflow: auto; padding: 16px 14px; }
-    .setup-intro h2 { margin: 0 0 6px; color: #eeeaf5; font-size: 13px; }
-    .setup-intro p, .setup-security { margin: 0; color: #a4a5af; font-size: 10px; line-height: 1.6; }
-    .setup-fields { display: grid; gap: 11px; }
-    .setup-field { display: grid; gap: 5px; color: #c4c3cd; font-size: 10px; font-weight: 600; }
-    .setup-field input { width: 100%; height: 34px; padding: 0 9px; border: 1px solid #393a44; border-radius: 6px; background: #1b1c21; color: #eeedf3; font-size: 10px; font-weight: 400; }
-    .setup-field input:focus { border-color: #7355b3; outline: 1px solid #7355b3; }
-    .setup-field input::placeholder { color: #70727e; }
-    .setup-security { padding: 9px; border: 1px solid #3a3543; border-radius: 7px; background: #211f27; }
-    .setup-security strong { color: #e4d9ff; font-weight: 600; }
-    .setup-actions { display: flex; gap: 7px; }
-    .connect-button, .disconnect-button { min-height: 32px; padding: 0 10px; border: 1px solid #966ff0; border-radius: 6px; background: #8055e8; color: #fff; cursor: pointer; font-size: 10px; font-weight: 650; }
-    .connect-button:hover { background: #9169f1; }
-    .connect-button:disabled { opacity: .65; cursor: wait; }
-    .disconnect-button { border-color: #3b3c45; background: transparent; color: #c6c5ce; }
-    .disconnect-button:hover { background: #292a31; }
-    .setup-status { min-height: 16px; color: #f5b971; font-size: 10px; line-height: 1.5; }
-    .setup-status.success { color: var(--green); }
-    .setup-status.error { color: #ff9a9a; }
-    .chat { flex: 1; overflow: auto; padding: 17px 14px; }
-    .chat-date { margin-bottom: 17px; color: #777985; text-align: center; font-size: 9px; }
-    .message { margin-bottom: 16px; }
-    .message-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; color: #a4a5af; font-size: 10px; font-weight: 600; }
-    .mini-avatar { width: 17px; height: 17px; display: grid; place-items: center; border-radius: 5px; background: #332a45; color: #c8adff; font-size: 9px; }
-    .message-bubble { padding: 11px; border: 1px solid #2b2c33; border-radius: 3px 9px 9px; background: #1d1e24; color: #c5c5ce; font-size: 11px; line-height: 1.7; }
-    .message-bubble p { margin: 0 0 8px; }
-    .message-bubble p:last-child { margin-bottom: 0; }
-    .message-bubble strong { color: #e6e2ed; font-weight: 600; }
-    .message-bubble code { padding: 2px 4px; border-radius: 3px; background: #292a32; color: #d2bcff; font-family: var(--mono); font-size: 10px; }
-    .quick-prompts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
-    .prompt-chip { padding: 6px 8px; border: 1px solid #34353e; border-radius: 6px; background: #1c1d22; color: #aeadb8; cursor: pointer; font-size: 9px; }
-    .prompt-chip:hover { border-color: #7253b2; color: #e4d9ff; }
-    .chat-composer { margin: 0 12px 12px; padding: 9px; border: 1px solid #3a3b45; border-radius: 9px; background: #1c1d22; }
-    .chat-composer:focus-within { border-color: #7355b3; }
-    .chat-composer textarea { width: 100%; min-height: 44px; resize: vertical; border: 0; outline: 0; background: transparent; color: #e8e6ef; font-size: 11px; line-height: 1.5; }
-    .chat-composer textarea::placeholder { color: #737580; }
-    .composer-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
-    .composer-hint { color: #71737f; font-size: 9px; }
-    .send-button { width: 26px; height: 26px; border-color: #8d69dd; background: #8055e8; color: #fff; }
-    .send-button:hover { background: #946ff2; }
-    .statusbar { height: 24px; flex: 0 0 24px; display: flex; align-items: center; justify-content: space-between; padding: 0 11px; background: #7952d1; color: #f7f4ff; font-size: 9px; }
-    .status-left, .status-right { gap: 14px; }
-    .status-item { display: inline-flex; align-items: center; gap: 5px; }
-    .status-item svg { width: 11px; height: 11px; }
-    .welcome-backdrop { position: fixed; z-index: 5; inset: 0; display: grid; place-items: center; padding: 18px; background: #09090cb8; backdrop-filter: blur(5px); }
-    .welcome-backdrop.hidden { display: none; }
-    .welcome-card { position: relative; width: min(470px, 100%); padding: 27px; border: 1px solid #393440; border-radius: 15px; background: linear-gradient(150deg, #201d28, #17181d 55%); box-shadow: 0 24px 90px #0009; }
-    .welcome-close { position: absolute; top: 15px; right: 15px; width: 29px; height: 29px; border-color: transparent; color: #9999a5; }
-    .welcome-close:hover { background: #2a2931; color: #fff; }
-    .welcome-close svg { width: 15px; height: 15px; }
-    .welcome-symbol { width: 43px; height: 43px; display: grid; place-items: center; margin-bottom: 17px; border: 1px solid #594182; border-radius: 12px; background: #2d2340; color: #d5c2ff; }
-    .welcome-symbol svg { width: 23px; height: 23px; }
-    .eyebrow { margin-bottom: 8px; color: #c0a6ff; font-size: 9px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
-    .welcome-card h1 { margin: 0 0 10px; font-size: 22px; font-weight: 700; letter-spacing: -.55px; }
-    .welcome-card > p { margin: 0; color: #b0afba; font-size: 12px; line-height: 1.7; }
-    .welcome-card > p strong { color: #e3d8ff; font-weight: 600; }
-    .safety-heading { display: flex; align-items: center; gap: 7px; margin: 21px 0 10px; color: #e5e3eb; font-size: 11px; font-weight: 650; }
-    .safety-heading svg { width: 15px; height: 15px; color: var(--green); }
-    .safety-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
-    .safety-list li { display: flex; align-items: flex-start; gap: 9px; color: #aeadb8; font-size: 10px; line-height: 1.55; }
-    .safety-list li svg { width: 13px; height: 13px; flex: 0 0 13px; margin-top: 1px; color: var(--green); }
-    .welcome-note { margin-top: 17px; padding: 10px 11px; border: 1px solid #383340; border-radius: 7px; background: #211f27; color: #a6a4b0; font-size: 10px; line-height: 1.6; }
-    .welcome-note strong { color: #e3d8ff; font-weight: 600; }
-    .welcome-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 20px; }
-    .version-label { color: #777884; font-size: 9px; }
-    .welcome-continue { min-height: 34px; padding: 0 13px; border: 1px solid #966ff0; border-radius: 7px; background: #8055e8; color: #fff; cursor: pointer; font-size: 10px; font-weight: 650; }
-    .welcome-continue:hover { background: #9169f1; }
-    .new-file-card { width: min(350px, 100%); padding: 22px; border: 1px solid #393440; border-radius: 12px; background: #1b1b21; box-shadow: 0 24px 90px #0009; }
-    .new-file-card h2 { margin: 0 0 7px; font-size: 15px; }
-    .new-file-card p { margin: 0 0 15px; color: #aeadb8; font-size: 11px; line-height: 1.55; }
-    .new-file-card input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid #3a3b45; border-radius: 6px; background: #141519; color: var(--text); font-size: 11px; }
-    .new-file-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
-    .new-file-actions button { height: 31px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: #c7c7d0; cursor: pointer; font-size: 10px; }
-    .new-file-actions button[type="submit"] { border-color: #966ff0; background: #8055e8; color: #fff; }
-    .toast { position: fixed; right: 18px; bottom: 39px; z-index: 4; padding: 10px 13px; border: 1px solid #3b3943; border-radius: 8px; background: #24232a; color: #e4e1eb; box-shadow: 0 8px 30px #0005; font-size: 11px; opacity: 0; pointer-events: none; transform: translateY(5px); transition: .2s; }
-    .toast.visible { opacity: 1; transform: translateY(0); }
-    @media (max-width: 1050px) {
-      .assistant { width: 270px; flex-basis: 270px; }
-      .explorer { width: 190px; flex-basis: 190px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
+    .brand-mark {
+      width: 35px;
+      height: 35px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #b79aff40;
+      border-radius: 11px;
+      background: linear-gradient(145deg, #a780f324, #6545a51c);
+      color: #c3aaff;
     }
-    @media (max-width: 790px) {
-      .assistant { width: 245px; flex-basis: 245px; }
-      .explorer { width: 165px; flex-basis: 165px; }
-      .brand, .top-actions { min-width: auto; }
-      .breadcrumbs { display: none; }
-      .quiet-button { display: none; }
+    .brand-mark svg { width: 19px; height: 19px; }
+    .brand-name { font-size: 13px; font-weight: 680; letter-spacing: -.2px; }
+    .brand-subtitle { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .ai-links { display: flex; align-items: center; gap: 7px; }
+    .ai-links-label { margin-right: 5px; color: #777581; font-size: 10px; }
+    .ai-link {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 10px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      color: #c5c2ce;
+      text-decoration: none;
+      font-size: 11px;
+      transition: border-color .15s, background .15s, color .15s;
     }
-    @media (max-width: 610px) {
-      body { overflow: auto; }
-      .app { min-height: 100vh; height: auto; }
-      .topbar { position: sticky; top: 0; z-index: 2; padding: 0 12px; }
-      .brand-subtitle { display: none; }
-      .workspace { min-height: calc(100vh - 82px); }
-      .activity-rail { width: 40px; flex-basis: 40px; }
-      .explorer { display: none; }
-      .assistant { display: none; }
-      .editor-column { min-height: 580px; }
-      .editor { min-height: 200px; }
-      .preview-panel { height: 240px; flex: 0 0 240px; }
-      .status-right { gap: 7px; }
+    .ai-link:hover { border-color: #393641; background: #1c1b21; color: #fff; }
+    .ai-link svg { width: 14px; height: 14px; color: var(--purple); }
+
+    main { width: min(900px, 100%); flex: 1; display: flex; flex-direction: column; align-self: center; padding: clamp(34px, 7vh, 76px) 28px 40px; }
+    .intro { margin-bottom: 25px; }
+    .eyebrow { margin-bottom: 11px; color: var(--purple); font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(26px, 4vw, 36px); font-weight: 580; letter-spacing: -1.2px; }
+    .intro p { margin: 9px 0 0; color: #a4a1ad; font-size: 13px; line-height: 1.7; }
+
+    .note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 17px;
+      padding: 12px 13px;
+      border: 1px solid #393044;
+      border-radius: 9px;
+      background: #211c29;
+      color: #c5bfce;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .note-icon { flex: 0 0 auto; color: #c6aaff; }
+    .note-icon svg { width: 15px; height: 15px; margin-top: 1px; }
+    .note p { flex: 1; margin: 0; }
+    .note strong { color: #eee4ff; font-weight: 620; }
+    .note-close { flex: 0 0 auto; padding: 0 2px; border: 0; background: none; color: #9a92a5; cursor: pointer; font-size: 17px; line-height: 1; }
+    .note-close:hover { color: #fff; }
+    .note.hidden { display: none; }
+
+    .editor-card {
+      flex: 1;
+      min-height: 370px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid #302e38;
+      border-radius: 12px;
+      background: #151519;
+      box-shadow: 0 22px 70px #00000024, 0 1px 0 #ffffff08 inset;
+    }
+    .editor-toolbar {
+      min-height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px;
+      border-bottom: 1px solid #292830;
+      background: #19191e;
+    }
+    .document-name { display: flex; align-items: center; gap: 8px; color: #c8c5d0; font-size: 10px; }
+    .document-dot { width: 7px; height: 7px; border-radius: 50%; background: #b28eff; box-shadow: 0 0 10px #b28eff75; }
+    .toolbar-actions { display: flex; align-items: center; gap: 6px; }
+    .toolbar-button {
+      min-height: 27px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 9px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: #aaa7b3;
+      cursor: pointer;
+      font-size: 10px;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .toolbar-button:hover { border-color: #383640; background: #222127; color: #f2eff7; }
+    .toolbar-button svg { width: 13px; height: 13px; }
+    .editor-body { position: relative; flex: 1; display: flex; }
+    .editor-body::before {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 55px;
+      width: 1px;
+      background: #ffffff08;
+      content: "";
+      pointer-events: none;
+    }
+    .line-count {
+      width: 56px;
+      flex: 0 0 56px;
+      padding: 22px 15px 24px 0;
+      color: #55535e;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.85;
+      text-align: right;
+      user-select: none;
+    }
+    .editor {
+      width: 100%;
+      min-width: 0;
+      min-height: 325px;
+      flex: 1;
+      padding: 22px 24px;
+      resize: none;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #e0dce8;
+      caret-color: #c3aaff;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.85;
+      tab-size: 2;
+    }
+    .editor:focus-visible { outline: none; }
+    .editor::placeholder { color: #5f5c68; opacity: 1; }
+    .editor-footer {
+      min-height: 31px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 13px;
+      border-top: 1px solid #292830;
+      color: #777580;
+      font-size: 9px;
+    }
+    .footer-group { display: flex; align-items: center; gap: 13px; }
+    .footer-status { color: #a19da9; }
+    .page-footer { padding-top: 18px; color: #686672; text-align: center; font-size: 10px; }
+
+    @media (min-height: 750px) {
+      .editor-card { min-height: min(55vh, 560px); }
+    }
+    @media (max-width: 620px) {
+      .topbar { align-items: flex-start; flex-direction: column; gap: 12px; padding: 16px 20px 13px; }
+      .ai-links { width: 100%; flex-wrap: wrap; gap: 4px; }
+      .ai-links-label { width: 100%; margin: 0 0 2px 4px; }
+      .ai-link { padding: 0 8px; }
+      main { padding: 35px 16px 26px; }
+      .editor-card { min-height: 48vh; }
+      .editor { padding: 18px 14px; font-size: 11px; }
+      .line-count { width: 43px; flex-basis: 43px; padding-right: 11px; font-size: 11px; }
+      .editor-body::before { left: 42px; }
+      .toolbar-button { padding: 0 7px; }
+    }
+    @media (max-width: 380px) {
+      .ai-link { font-size: 10px; }
+      .editor-toolbar { padding: 0 9px; }
+      .document-name { font-size: 9px; }
+      .toolbar-button { gap: 4px; font-size: 9px; }
+      .footer-group { gap: 8px; }
     }
   </style>
 </head>
 <body>
   <div class="app">
     <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
+      <a class="brand" href="#" aria-label="Vibe Coding Studio home">
+        <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none"><path d="m13.3 2-8 11h5.8l-.6 9 8.2-12h-6l.6-8Z" fill="currentColor"/></svg>
-        </div>
-        <div><div class="brand-name">Vibe Coding Studio</div><span class="brand-subtitle">Your ideas, in motion</span></div>
-      </div>
-      <div class="breadcrumbs"><span>my-first-project</span><span class="crumb-slash">/</span><strong>index.html</strong></div>
-      <div class="top-actions">
-        <button class="quiet-button" id="welcome-button" type="button" title="About this studio">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg>
-          About
-        </button>
-        <button class="icon-button" id="help-button" type="button" aria-label="Open welcome and safety information" title="Welcome and safety">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.2 1.8c-1.2 1.1-1.8 1.3-1.8 3m0 3h.01"/></svg>
-        </button>
-        <button class="run-button" id="run-button" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 5 11 7-11 7V5Z" fill="currentColor" stroke="none"/></svg>
-          Run
-        </button>
-      </div>
+        </span>
+        <span>
+          <span class="brand-name">Vibe Coding Studio</span>
+          <span class="brand-subtitle">A quiet place to think in code</span>
+        </span>
+      </a>
+
+      <nav class="ai-links" aria-label="Open an AI assistant">
+        <span class="ai-links-label">Take your idea to</span>
+        <a class="ai-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12.1 3.5a5 5 0 0 0-4.8 3.6A4.6 4.6 0 0 0 4.5 15a4.7 4.7 0 0 0 4.4 5.5 4.8 4.8 0 0 0 3.2-1.2 4.8 4.8 0 0 0 7.3-4.1 4.7 4.7 0 0 0-.7-2.5 4.7 4.7 0 0 0-2.5-7.6 4.9 4.9 0 0 0-4.1-1.6Z"/><path d="m8 7 8.6 5M5 15l8.8-5m-1.7 9.3V9.2"/></svg>
+          ChatGPT
+        </a>
+        <a class="ai-link" href="https://claude.ai/" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M7 4.2l10 15.6M17 4.2 7 19.8"/></svg>
+          Claude
+        </a>
+        <a class="ai-link" href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2.8c.9 4.9 4.3 8.3 9.2 9.2-4.9.9-8.3 4.3-9.2 9.2-.9-4.9-4.3-8.3-9.2-9.2 4.9-.9 8.3-4.3 9.2-9.2Z"/></svg>
+          Gemini
+        </a>
+      </nav>
     </header>
 
-    <div class="workspace">
-      <nav class="activity-rail" aria-label="Studio tools">
-        <button class="rail-button active" type="button" aria-label="Explorer" title="Explorer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10l2 2h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13Z"/><path d="M4.5 9h15"/></svg>
-        </button>
-        <button class="rail-button" id="rail-preview-button" type="button" aria-label="Toggle preview" title="Toggle preview">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 8.5h17M7 6.5h.01m3 0h.01"/></svg>
-        </button>
-        <div class="rail-spacer"></div>
-        <button class="rail-button" id="settings-button" type="button" aria-label="Settings" title="Settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 13.5 1.1.9-1.5 2.6-1.3-.5a7.7 7.7 0 0 1-1.6.9l-.2 1.4h-3l-.2-1.4a7.7 7.7 0 0 1-1.6-.9l-1.3.5-1.5-2.6 1.1-.9a7 7 0 0 1 0-1.8l-1.1-.9 1.5-2.6 1.3.5a7.7 7.7 0 0 1 1.6-.9l.2-1.4h3l.2 1.4a7.7 7.7 0 0 1 1.6.9l1.3-.5 1.5 2.6-1.1.9a7 7 0 0 1 0 1.8Z" transform="translate(-1 -1) scale(1.08)"/></svg>
-        </button>
-      </nav>
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div class="eyebrow">Your blank canvas</div>
+        <h1 id="page-title">Start with a thought.</h1>
+        <p>Write something down. Copy it into the AI tool you like. See where it takes you.</p>
+      </section>
 
-      <aside class="explorer" aria-label="Project files">
-        <div class="section-heading"><span>Explorer</span><button id="new-file-button" type="button" aria-label="New file" title="New file">+</button></div>
-        <div class="project-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3.5 6A1.5 1.5 0 0 1 5 4.5h5l2 2h7A1.5 1.5 0 0 1 20.5 8v10a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18V6Z"/></svg>
-          MY-FIRST-PROJECT
-        </div>
-        <div class="tree">
-          <button class="file-button selected" type="button" data-file="index.html" aria-current="page">
-            <svg class="html-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5v5h5M8 13l-2 2 2 2m8-4 2 2-2 2m-3-5-2 6"/></svg>
-            index.html
-          </button>
-          <button class="file-button" type="button" data-file="styles.css">
-            <svg class="css-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5v5h5M8 14h8m-8 3h6"/></svg>
-            styles.css
-          </button>
-          <button class="file-button" type="button" data-file="app.js">
-            <svg class="js-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5v5h5M8 17.5l1.5-1.5L8 14.5m4 3h3"/></svg>
-            app.js
-          </button>
-          <div class="folder-row">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m9 6 6 6-6 6"/></svg>
-            assets
-          </div>
-          <button class="file-button" type="button" data-file="README.md">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5v5h5M8 13h8m-8 3h8"/></svg>
-            README.md
-          </button>
-        </div>
+      <aside class="note" id="welcome-note">
+        <span class="note-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m13.3 2-8 11h5.8l-.6 9 8.2-12h-6l.6-8Z"/></svg>
+        </span>
+        <p><strong>Made with Vibe Coding.</strong> This is simply a place to write. Your notes stay in this browser tab; nothing is sent anywhere until you choose to copy it into an AI service.</p>
+        <button class="note-close" id="dismiss-note" type="button" aria-label="Dismiss welcome message">×</button>
       </aside>
 
-      <main class="editor-area">
-        <section class="editor-column" aria-label="Code editor">
-          <div class="tabs">
-            <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5v5h5M8 13l-2 2 2 2m8-4 2 2-2 2m-3-5-2 6"/></svg><span id="active-filename">index.html</span><span class="tab-close">×</span></div>
+      <section class="editor-card" aria-label="Text editor">
+        <div class="editor-toolbar">
+          <div class="document-name"><span class="document-dot"></span><span>Untitled note</span></div>
+          <div class="toolbar-actions">
+            <button class="toolbar-button" id="copy-button" type="button" title="Copy text to clipboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+              Copy
+            </button>
+            <button class="toolbar-button" id="download-button" type="button" title="Download as a text file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-5-5 5 5 5-5M5 17v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3"/></svg>
+              Save
+            </button>
           </div>
-          <div class="toolbar">
-            <div class="toolbar-group"><span id="file-breadcrumb">index.html</span><span>/</span><span>UTF-8</span><span>Spaces: 2</span></div>
-            <div class="toolbar-group">
-              <button id="format-button" type="button" title="Format document">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 5h12M8 10h12M8 15h12M8 20h12M3.5 5h.01M3.5 10h.01M3.5 15h.01M3.5 20h.01"/></svg>
-                Format
-              </button>
-              <span id="cursor-position">Ln 1, Col 1</span>
-            </div>
-          </div>
-          <div class="editor">
-            <div class="line-numbers" id="line-numbers" aria-hidden="true">1</div>
-            <textarea class="code-input" id="code-input" aria-label="Code editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
-          </div>
-          <section class="preview-panel" id="preview-panel" aria-label="Live preview">
-            <div class="preview-toolbar">
-              <div class="preview-label"><span class="live-dot"></span>Preview <span class="preview-address">localhost:3000</span></div>
-              <button class="close-preview" id="close-preview" type="button" aria-label="Close preview" title="Close preview">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 7 10 10M17 7 7 17"/></svg>
-              </button>
-            </div>
-            <iframe class="preview-frame" id="preview-frame" title="Project preview" sandbox="allow-scripts"></iframe>
-          </section>
-        </section>
-      </main>
-
-      <aside class="assistant" aria-label="AI coding assistant">
-        <div class="assistant-header">
-          <div class="assistant-title"><span class="assistant-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span>Vibe Assistant</div>
-          <span class="model-pill" id="connection-badge">Not connected</span>
         </div>
-        <div class="assistant-tabs" role="tablist" aria-label="Assistant sections">
-          <button class="assistant-tab" id="chat-tab" type="button" role="tab" aria-selected="false" aria-controls="chat-view" disabled>Chat</button>
-          <button class="assistant-tab active" id="setup-tab" type="button" role="tab" aria-selected="true" aria-controls="setup-view">Setup</button>
+        <div class="editor-body">
+          <div class="line-count" id="line-count" aria-hidden="true">1</div>
+          <textarea class="editor" id="editor" aria-label="Your note" placeholder="A thought, a question, a little bit of code..." spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
         </div>
-        <section class="assistant-view setup-view" id="setup-view" role="tabpanel" aria-labelledby="setup-tab">
-          <div class="setup-intro">
-            <h2>Connect your AI</h2>
-            <p>Use an OpenAI-compatible chat completions API. Connect and verify it here before opening the assistant.</p>
-          </div>
-          <form class="setup-fields" id="setup-form">
-            <label class="setup-field">API base URL
-              <input id="api-url" type="url" value="https://api.openai.com/v1" placeholder="https://api.example.com/v1" required autocomplete="url" spellcheck="false">
-            </label>
-            <label class="setup-field">Model
-              <input id="api-model" type="text" value="gpt-4o-mini" placeholder="gpt-4o-mini" required autocomplete="off" spellcheck="false">
-            </label>
-            <label class="setup-field">API key
-              <input id="api-key" type="password" placeholder="Paste your API key" required autocomplete="off" spellcheck="false">
-            </label>
-            <div class="setup-security"><strong>Privacy:</strong> Your key stays in memory in this page and is never saved. Prompts are sent directly to the endpoint you choose. Only connect to a provider you trust. If your browser blocks the request, serve this page from localhost and check that the API allows browser CORS requests.</div>
-            <div class="setup-actions">
-              <button class="connect-button" id="connect-button" type="submit">Connect and verify</button>
-              <button class="disconnect-button" id="disconnect-button" type="button" hidden>Disconnect</button>
-            </div>
-            <div class="setup-status" id="setup-status" role="status" aria-live="polite"></div>
-          </form>
-        </section>
-        <section class="assistant-view hidden" id="chat-view" role="tabpanel" aria-labelledby="chat-tab">
-          <div class="chat" id="chat">
-            <div class="chat-date">A NEW SESSION</div>
-            <div class="message">
-              <div class="message-meta"><span class="mini-avatar">✦</span> Vibe Assistant</div>
-              <div class="message-bubble">
-                <p>Your AI is connected. Tell me what you're imagining, and we'll build it together.</p>
-                <div class="quick-prompts">
-                  <button class="prompt-chip" type="button">Build a landing page</button>
-                  <button class="prompt-chip" type="button">Explain this code</button>
-                  <button class="prompt-chip" type="button">Add a feature</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <form class="chat-composer" id="chat-form">
-            <textarea id="chat-input" aria-label="Message the Vibe Assistant" placeholder="Describe what you want to build..." rows="2" disabled></textarea>
-            <div class="composer-footer"><span class="composer-hint">Enter to send · Shift + Enter for a new line</span>
-              <button class="send-button" type="submit" aria-label="Send message" title="Send message" disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 14-7-5 14-2-6-7-1Zm7 1 7-8"/></svg>
-              </button>
-            </div>
-          </form>
-        </section>
-      </aside>
-    </div>
+        <div class="editor-footer">
+          <div class="footer-group"><span class="footer-status" id="status-message" aria-live="polite">Ready when you are</span></div>
+          <div class="footer-group"><span id="line-total">1 line</span><span id="character-total">0 characters</span></div>
+        </div>
+      </section>
 
-    <footer class="statusbar">
-      <div class="status-left">
-        <span class="status-item"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg>Ready</span>
-        <span class="status-item">my-first-project</span>
-      </div>
-      <div class="status-right"><span id="status-language">HTML</span><span>UTF-8</span><span>Ln <span id="status-line">1</span>, Col <span id="status-column">1</span></span></div>
-    </footer>
+      <footer class="page-footer">No setup. No account. Just a place to begin.</footer>
+    </main>
   </div>
-
-  <div class="welcome-backdrop" id="welcome-panel" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
-    <section class="welcome-card">
-      <button class="welcome-close" id="close-welcome" type="button" aria-label="Close welcome panel" title="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m7 7 10 10M17 7 7 17"/></svg>
-      </button>
-      <div class="welcome-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m13.3 2-8 11h5.8l-.6 9 8.2-12h-6l.6-8Z"/></svg></div>
-      <div class="eyebrow">A little note before you begin</div>
-      <h1 id="welcome-title">Welcome to Vibe Coding Studio</h1>
-      <p>This studio was <strong>created with Vibe Coding</strong> — a reminder that a clear idea, a little curiosity, and the right tools can take you a long way. Now it's your turn to make something.</p>
-      <div class="safety-heading">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3 20 6v5c0 5-3.4 8.2-8 10-4.6-1.8-8-5-8-10V6l8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
-        A few good habits
-      </div>
-      <ul class="safety-list">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg><span><strong>Keep secrets private.</strong> Never paste passwords, API keys, or personal information into prompts or code.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg><span><strong>Review before you run.</strong> AI-generated code can be wrong. Read changes and only run code you trust.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg><span><strong>Back up your work.</strong> Save copies of projects you care about; experiments can break things.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg><span><strong>Check what you share.</strong> Be thoughtful about permissions, external links, and where your code or data goes.</span></li>
-      </ul>
-      <div class="welcome-note"><strong>Good to know:</strong> This is a lightweight studio demo. Project files stay in this page and are not saved to a server. To use the assistant, connect an OpenAI-compatible API in its Setup tab. Your API key stays in page memory only; prompts go directly to your chosen provider.</div>
-      <div class="welcome-footer"><span class="version-label">VIBE CODING STUDIO · PREVIEW</span><button class="welcome-continue" id="continue-button" type="button">Sounds good, let's build</button></div>
-    </section>
-  </div>
-  <div class="welcome-backdrop hidden" id="new-file-panel" role="dialog" aria-modal="true" aria-labelledby="new-file-title">
-    <form class="new-file-card" id="new-file-form">
-      <h2 id="new-file-title">Create a file</h2>
-      <p>This file will be available in this session only.</p>
-      <input id="new-file-name" aria-label="File name" placeholder="for example, notes.txt" required pattern="[A-Za-z0-9._\-]+" autocomplete="off">
-      <div class="new-file-actions">
-        <button id="cancel-new-file" type="button">Cancel</button>
-        <button type="submit">Create file</button>
-      </div>
-    </form>
-  </div>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
     (() => {
-      const starterFiles = {
-        "index.html": `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My First Project</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <main class="welcome">
-    <span class="sparkle">✦</span>
-    <p class="eyebrow">A fresh start</p>
-    <h1>Make something<br><span>you love.</span></h1>
-    <p class="intro">Every great project begins with an idea. What will you create today?</p>
-    <button id="start-button">Let's get started <span>→</span></button>
-    <p class="footnote">Made with curiosity and a little bit of code.</p>
-  </main>
-  <script src="app.js"><\/script>
-</body>
-</html>`,
-        "styles.css": `:root {
-  color-scheme: light;
-  font-family: "DM Sans", sans-serif;
-  color: #29243a;
-  background: #f5f1ff;
-}
+      const editor = document.getElementById("editor");
+      const lineCount = document.getElementById("line-count");
+      const lineTotal = document.getElementById("line-total");
+      const characterTotal = document.getElementById("character-total");
+      const statusMessage = document.getElementById("status-message");
 
-* { box-sizing: border-box; }
-body {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  margin: 0;
-  padding: 24px;
-  background: radial-gradient(ellipse at 50% 0%, #e6dcff, transparent 65%), #f8f6fc;
-}
-.welcome {
-  width: min(480px, 100%);
-  padding: 56px 48px 42px;
-  border: 1px solid #e8e1f3;
-  border-radius: 20px;
-  background: #ffffffd9;
-  box-shadow: 0 24px 80px #6651a31a;
-  text-align: center;
-}
-.sparkle { color: #8b5cf6; font-size: 25px; }
-.eyebrow {
-  margin: 15px 0 12px;
-  color: #9277c5;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-}
-h1 {
-  margin: 0;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: clamp(39px, 10vw, 54px);
-  font-weight: 500;
-  letter-spacing: -.045em;
-  line-height: 1.12;
-}
-h1 span { color: #8b5cf6; }
-.intro {
-  max-width: 300px;
-  margin: 20px auto 25px;
-  color: #797386;
-  font-size: 14px;
-  line-height: 1.8;
-}
-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 13px;
-  padding: 13px 19px;
-  border: 0;
-  border-radius: 9px;
-  background: #8055e8;
-  color: white;
-  cursor: pointer;
-  font: 600 13px "DM Sans", sans-serif;
-}
-button:hover { background: #7045d6; }
-button span { font-size: 17px; }
-.footnote { margin: 29px 0 0; color: #a5a0af; font-size: 11px; }
-@media (max-width: 420px) {
-  .welcome { padding: 43px 25px 34px; }
-}`,
-        "app.js": `const startButton = document.querySelector("#start-button");
-
-startButton.addEventListener("click", () => {
-  startButton.innerHTML = 'You have got this <span>✦</span>';
-});`,
-        "README.md": `# My First Project
-
-A small creative starting point, made in Vibe Coding Studio.
-
-## Get started
-
-1. Edit the files in the Explorer.
-2. Press **Run** to see your changes.
-3. Ask the Vibe Assistant for ideas or code explanations.
-
-Have fun making it yours!`
-      };
-      const fileTypes = {
-        "index.html": "HTML",
-        "styles.css": "CSS",
-        "app.js": "JavaScript",
-        "README.md": "Markdown"
-      };
-      let files = { ...starterFiles };
-      let activeFile = "index.html";
-      const codeInput = document.getElementById("code-input");
-      const lineNumbers = document.getElementById("line-numbers");
-      const previewPanel = document.getElementById("preview-panel");
-      const previewFrame = document.getElementById("preview-frame");
-      const welcomePanel = document.getElementById("welcome-panel");
-      const newFilePanel = document.getElementById("new-file-panel");
-      const chat = document.getElementById("chat");
-      const toast = document.getElementById("toast");
-      const setupStatus = document.getElementById("setup-status");
-      const chatTab = document.getElementById("chat-tab");
-      const setupTab = document.getElementById("setup-tab");
-      const chatView = document.getElementById("chat-view");
-      const setupView = document.getElementById("setup-view");
-      const chatInput = document.getElementById("chat-input");
-      const sendButton = document.querySelector("#chat-form button[type='submit']");
-      let apiConnection = null;
-      let activeRequestController = null;
-      let conversation = [];
-      let toastTimer;
-
-      function showToast(message) {
-        toast.textContent = message;
-        toast.classList.add("visible");
-        window.clearTimeout(toastTimer);
-        toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 2600);
+      function updateCounts() {
+        const lineNumber = editor.value.split("\n").length;
+        const characterNumber = editor.value.length;
+        lineCount.textContent = Array.from({ length: lineNumber }, (_, index) => index + 1).join("\n");
+        lineTotal.textContent = `${lineNumber} ${lineNumber === 1 ? "line" : "lines"}`;
+        characterTotal.textContent = `${characterNumber} ${characterNumber === 1 ? "character" : "characters"}`;
       }
 
-      function updateLineNumbers() {
-        const lines = codeInput.value.split("\n").length;
-        lineNumbers.textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
+      function setStatus(message) {
+        statusMessage.textContent = message;
       }
 
-      function updateCursorPosition() {
-        const beforeCursor = codeInput.value.slice(0, codeInput.selectionStart);
-        const lines = beforeCursor.split("\n");
-        const line = lines.length;
-        const column = lines[lines.length - 1].length + 1;
-        document.getElementById("cursor-position").textContent = `Ln ${line}, Col ${column}`;
-        document.getElementById("status-line").textContent = line;
-        document.getElementById("status-column").textContent = column;
+      async function copyText() {
+        if (!editor.value) {
+          setStatus("There is nothing to copy yet.");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(editor.value);
+          setStatus("Copied to clipboard.");
+        } catch {
+          editor.focus();
+          editor.select();
+          const copied = document.execCommand("copy");
+          editor.setSelectionRange(editor.value.length, editor.value.length);
+          setStatus(copied ? "Copied to clipboard." : "Copy was blocked by your browser.");
+        }
       }
 
-      function setActiveFile(filename) {
-        if (!Object.prototype.hasOwnProperty.call(files, filename)) return;
-        files[activeFile] = codeInput.value;
-        activeFile = filename;
-        codeInput.value = files[activeFile];
-        document.getElementById("active-filename").textContent = activeFile;
-        document.getElementById("file-breadcrumb").textContent = activeFile;
-        document.getElementById("status-language").textContent = fileTypes[activeFile] || "Plain Text";
-        document.querySelector(".breadcrumbs strong").textContent = activeFile;
-        document.querySelector(".tab svg").className.baseVal = activeFile.endsWith(".html") ? "html-icon" : "";
-        document.querySelectorAll(".file-button[data-file]").forEach((button) => {
-          const selected = button.dataset.file === activeFile;
-          button.classList.toggle("selected", selected);
-          if (selected) button.setAttribute("aria-current", "page");
-          else button.removeAttribute("aria-current");
-        });
-        updateLineNumbers();
-        updateCursorPosition();
-        runPreview();
+      function downloadText() {
+        if (!editor.value) {
+          setStatus("Write a note before saving.");
+          return;
+        }
+        const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "vibe-note.txt";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setStatus("Downloaded vibe-note.txt");
       }
 
-      function runPreview() {
-        files[activeFile] = codeInput.value;
-        const html = files["index.html"] || "";
-        const css = files["styles.css"] || "";
-        const javascript = files["app.js"] || "";
-        const combined = html
-          .replace(/<link\b[^>]*href=["']styles\.css["'][^>]*>/gi, `<style>${css}</style>`)
-          .replace(/<script\b[^>]*src=["']app\.js["'][^>]*><\/script>/gi, `<script>${javascript}<\/script>`);
-        previewFrame.srcdoc = combined;
-        previewPanel.classList.remove("hidden");
-      }
-
-      function closeWelcome() {
-        welcomePanel.classList.add("hidden");
-      }
-
-      document.querySelectorAll(".file-button[data-file]").forEach((button) => {
-        button.addEventListener("click", () => setActiveFile(button.dataset.file));
+      editor.addEventListener("input", () => {
+        updateCounts();
+        setStatus("Ready when you are");
       });
-      codeInput.value = files[activeFile];
-      updateLineNumbers();
-      updateCursorPosition();
-      codeInput.addEventListener("input", () => {
-        files[activeFile] = codeInput.value;
-        updateLineNumbers();
+      editor.addEventListener("scroll", () => {
+        lineCount.scrollTop = editor.scrollTop;
       });
-      codeInput.addEventListener("click", updateCursorPosition);
-      codeInput.addEventListener("keyup", updateCursorPosition);
-      codeInput.addEventListener("scroll", () => { lineNumbers.scrollTop = codeInput.scrollTop; });
-      codeInput.addEventListener("keydown", (event) => {
+      editor.addEventListener("keydown", (event) => {
         if (event.key === "Tab") {
           event.preventDefault();
-          const start = codeInput.selectionStart;
-          const end = codeInput.selectionEnd;
-          codeInput.setRangeText("  ", start, end, "end");
-          files[activeFile] = codeInput.value;
-          updateLineNumbers();
-          updateCursorPosition();
+          editor.setRangeText("  ", editor.selectionStart, editor.selectionEnd, "end");
+          editor.dispatchEvent(new Event("input"));
         }
-      });
-
-      document.getElementById("run-button").addEventListener("click", () => {
-        runPreview();
-        showToast("Preview updated");
-      });
-      document.getElementById("close-preview").addEventListener("click", () => previewPanel.classList.add("hidden"));
-      document.getElementById("rail-preview-button").addEventListener("click", () => {
-        if (previewPanel.classList.contains("hidden")) runPreview();
-        else previewPanel.classList.add("hidden");
-      });
-      document.getElementById("help-button").addEventListener("click", () => welcomePanel.classList.remove("hidden"));
-      document.getElementById("welcome-button").addEventListener("click", () => welcomePanel.classList.remove("hidden"));
-      document.getElementById("close-welcome").addEventListener("click", closeWelcome);
-      document.getElementById("continue-button").addEventListener("click", closeWelcome);
-      welcomePanel.addEventListener("click", (event) => {
-        if (event.target === welcomePanel) closeWelcome();
-      });
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !welcomePanel.classList.contains("hidden")) closeWelcome();
-      });
-
-      document.getElementById("format-button").addEventListener("click", () => {
-        const formatted = codeInput.value
-          .split("\n")
-          .map((line) => line.replace(/[ \t]+$/, ""))
-          .join("\n")
-          .trim();
-        codeInput.value = formatted ? `${formatted}\n` : "";
-        files[activeFile] = codeInput.value;
-        updateLineNumbers();
-        showToast("Whitespace cleaned up");
-      });
-      document.getElementById("new-file-button").addEventListener("click", () => {
-        newFilePanel.classList.remove("hidden");
-        document.getElementById("new-file-name").focus();
-      });
-      document.getElementById("cancel-new-file").addEventListener("click", () => newFilePanel.classList.add("hidden"));
-      newFilePanel.addEventListener("click", (event) => {
-        if (event.target === newFilePanel) newFilePanel.classList.add("hidden");
-      });
-      document.getElementById("new-file-form").addEventListener("submit", (event) => {
-        event.preventDefault();
-        const filename = document.getElementById("new-file-name").value.trim();
-        if (Object.prototype.hasOwnProperty.call(files, filename)) {
-          showToast("A file with that name already exists");
-          return;
-        }
-        files[filename] = "";
-        const extension = filename.split(".").pop().toLowerCase();
-        const language = { html: "HTML", css: "CSS", js: "JavaScript", md: "Markdown", json: "JSON" }[extension] || "Plain Text";
-        fileTypes[filename] = language;
-        const button = document.createElement("button");
-        button.className = "file-button";
-        button.type = "button";
-        button.dataset.file = filename;
-        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        icon.setAttribute("viewBox", "0 0 24 24");
-        icon.setAttribute("fill", "none");
-        icon.setAttribute("stroke", "currentColor");
-        icon.setAttribute("stroke-width", "1.6");
-        icon.innerHTML = '<path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5v5h5"/>';
-        button.append(icon, document.createTextNode(filename));
-        button.addEventListener("click", () => setActiveFile(filename));
-        document.querySelector(".tree").append(button);
-        document.getElementById("new-file-form").reset();
-        newFilePanel.classList.add("hidden");
-        setActiveFile(filename);
-      });
-      document.getElementById("settings-button").addEventListener("click", () => {
-        showToast("Studio settings are coming soon");
-      });
-
-      function setAssistantTab(tab) {
-        const showChat = tab === "chat" && apiConnection !== null;
-        chatView.classList.toggle("hidden", !showChat);
-        setupView.classList.toggle("hidden", showChat);
-        chatTab.classList.toggle("active", showChat);
-        setupTab.classList.toggle("active", !showChat);
-        chatTab.setAttribute("aria-selected", String(showChat));
-        setupTab.setAttribute("aria-selected", String(!showChat));
-      }
-
-      function setSetupStatus(message, type = "") {
-        setupStatus.textContent = message;
-        setupStatus.className = `setup-status${type ? ` ${type}` : ""}`;
-      }
-
-      function normalizeApiBaseUrl(value) {
-        let url;
-        try {
-          url = new URL(value);
-        } catch {
-          throw new Error("Enter a valid API base URL.");
-        }
-        const localHost = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-        if (url.protocol !== "https:" && !(url.protocol === "http:" && localHost)) {
-          throw new Error("Use HTTPS for the API URL (HTTP is allowed for localhost only).");
-        }
-        if (url.username || url.password || url.search || url.hash) {
-          throw new Error("The API URL must not contain credentials, a query string, or a fragment.");
-        }
-        let baseUrl = url.toString().replace(/\/+$/, "");
-        baseUrl = baseUrl.replace(/\/chat\/completions$/i, "");
-        return `${baseUrl}/chat/completions`;
-      }
-
-      async function requestCompletion(connection, messages, signal) {
-        let response;
-        try {
-          response = await fetch(connection.endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${connection.apiKey}`
-            },
-            body: JSON.stringify({
-              model: connection.model,
-              messages,
-              max_tokens: 256
-            }),
-            signal
-          });
-        } catch (error) {
-          if (error.name === "AbortError") throw error;
-          throw new Error("Network or CORS error. Check the API URL, server status, and whether the provider allows browser requests.");
-        }
-
-        const responseText = await response.text();
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch {
-          throw new Error(`The API returned an invalid response (HTTP ${response.status}).`);
-        }
-        if (!response.ok) {
-          const providerMessage = data.error && data.error.message;
-          throw new Error(providerMessage || `The API returned HTTP ${response.status}.`);
-        }
-
-        const choice = data.choices && data.choices[0];
-        const content = choice && choice.message && choice.message.content;
-        if (typeof content === "string" && content.trim()) return content.trim();
-        if (Array.isArray(content)) {
-          const text = content.map((part) => part.text || "").join("").trim();
-          if (text) return text;
-        }
-        throw new Error("The API responded, but did not return a chat completion. Check that the selected model supports chat completions.");
-      }
-
-      function resetConversation() {
-        chat.replaceChildren();
-        const date = document.createElement("div");
-        date.className = "chat-date";
-        date.textContent = "A NEW SESSION";
-        chat.append(date);
-        appendMessage("Vibe Assistant", "Your AI is connected. Tell me what you're imagining, and we'll build it together.", false);
-        const prompts = document.createElement("div");
-        prompts.className = "quick-prompts";
-        ["Build a landing page", "Explain this code", "Add a feature"].forEach((text) => {
-          const button = document.createElement("button");
-          button.className = "prompt-chip";
-          button.type = "button";
-          button.textContent = text;
-          prompts.append(button);
-        });
-        chat.querySelector(".message:last-child .message-bubble").append(prompts);
-        conversation = [];
-      }
-
-      document.getElementById("setup-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const connectButton = document.getElementById("connect-button");
-        const apiKeyInput = document.getElementById("api-key");
-        let endpoint;
-        try {
-          endpoint = normalizeApiBaseUrl(document.getElementById("api-url").value.trim());
-        } catch (error) {
-          setSetupStatus(error.message, "error");
-          return;
-        }
-        const candidate = {
-          endpoint,
-          model: document.getElementById("api-model").value.trim(),
-          apiKey: apiKeyInput.value
-        };
-        if (!candidate.model || !candidate.apiKey) {
-          setSetupStatus("Enter a model name and API key to continue.", "error");
-          return;
-        }
-
-        if (activeRequestController) activeRequestController.abort();
-        const controller = new AbortController();
-        activeRequestController = controller;
-        const timeout = window.setTimeout(() => controller.abort(), 20000);
-        connectButton.disabled = true;
-        connectButton.textContent = "Verifying connection...";
-        setSetupStatus("Checking the endpoint and model...");
-        try {
-          await requestCompletion(candidate, [{ role: "user", content: "Reply with OK." }], controller.signal);
-          apiConnection = candidate;
-          apiKeyInput.value = "";
-          chatTab.disabled = false;
-          document.getElementById("disconnect-button").hidden = false;
-          document.getElementById("connection-badge").textContent = candidate.model;
-          document.getElementById("connection-badge").title = "Connected";
-          chatInput.disabled = false;
-          sendButton.disabled = false;
-          resetConversation();
-          setSetupStatus("Connected and verified. Your API key is held in memory only.", "success");
-          setAssistantTab("chat");
-        } catch (error) {
-          const message = error.name === "AbortError"
-            ? "Connection timed out after 20 seconds. Check the endpoint and try again."
-            : error.message;
-          setSetupStatus(message, "error");
-        } finally {
-          window.clearTimeout(timeout);
-          if (activeRequestController === controller) activeRequestController = null;
-          connectButton.disabled = false;
-          connectButton.textContent = "Connect and verify";
-        }
-      });
-
-      chatTab.addEventListener("click", () => setAssistantTab("chat"));
-      setupTab.addEventListener("click", () => setAssistantTab("setup"));
-      document.getElementById("disconnect-button").addEventListener("click", () => {
-        if (activeRequestController) activeRequestController.abort();
-        activeRequestController = null;
-        apiConnection = null;
-        chatTab.disabled = true;
-        chatInput.disabled = true;
-        sendButton.disabled = true;
-        document.getElementById("disconnect-button").hidden = true;
-        document.getElementById("connection-badge").textContent = "Not connected";
-        document.getElementById("connection-badge").removeAttribute("title");
-        document.getElementById("api-key").value = "";
-        resetConversation();
-        setSetupStatus("Disconnected. Connect an API to use the assistant.");
-        setAssistantTab("setup");
-      });
-
-      function appendMessage(author, text, isUser) {
-        const message = document.createElement("div");
-        message.className = "message";
-        const meta = document.createElement("div");
-        meta.className = "message-meta";
-        const avatar = document.createElement("span");
-        avatar.className = "mini-avatar";
-        avatar.textContent = isUser ? "Y" : "✦";
-        meta.append(avatar, document.createTextNode(` ${author}`));
-        const bubble = document.createElement("div");
-        bubble.className = "message-bubble";
-        const paragraph = document.createElement("p");
-        paragraph.textContent = text;
-        bubble.append(paragraph);
-        message.append(meta, bubble);
-        chat.append(message);
-        chat.scrollTop = chat.scrollHeight;
-      }
-
-      chat.addEventListener("click", (event) => {
-        const button = event.target.closest(".prompt-chip");
-        if (!button || !apiConnection) return;
-        chatInput.value = button.textContent;
-        chatInput.focus();
-      });
-      document.getElementById("chat-form").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const message = chatInput.value.trim();
-        if (!message || !apiConnection || activeRequestController) return;
-        appendMessage("You", message, true);
-        chatInput.value = "";
-        conversation.push({ role: "user", content: message });
-        chatInput.disabled = true;
-        sendButton.disabled = true;
-        const connection = apiConnection;
-        const controller = new AbortController();
-        activeRequestController = controller;
-        try {
-          const reply = await requestCompletion(connection, conversation, controller.signal);
-          if (apiConnection !== connection) return;
-          conversation.push({ role: "assistant", content: reply });
-          appendMessage("Vibe Assistant", reply, false);
-        } catch (error) {
-          if (error.name !== "AbortError") appendMessage("Vibe Assistant", `I couldn't get a response: ${error.message}`, false);
-        } finally {
-          if (activeRequestController === controller) activeRequestController = null;
-          if (apiConnection === connection) {
-            chatInput.disabled = false;
-            sendButton.disabled = false;
-            chatInput.focus();
-          }
-        }
-      });
-      chatInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.shiftKey) {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
           event.preventDefault();
-          document.getElementById("chat-form").requestSubmit();
+          downloadText();
         }
       });
-
-      runPreview();
+      document.getElementById("copy-button").addEventListener("click", copyText);
+      document.getElementById("download-button").addEventListener("click", downloadText);
+      document.getElementById("dismiss-note").addEventListener("click", () => {
+        document.getElementById("welcome-note").classList.add("hidden");
+      });
+      updateCounts();
     })();
   </script>
 </body>
